@@ -1,0 +1,26 @@
+{
+  "name": "codex-quota-widget",
+  "version": "0.1.0+codex.20260614130154",
+  "description": "Local Codex quota widget companion for profile token stats and quota windows.",
+  "author": {
+    "name": "pimin"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Quota Widget",
+    "shortDescription": "Show Codex quota remaining while Codex is running.",
+    "longDescription": "Codex Quota Widget reads Codex profile token stats and local Codex rate-limit windows in a small Windows desktop companion window. It does not estimate costs or register startup tasks.",
+    "developerName": "pimin",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Show my current Codex quota"
+    ],
+    "brandColor": "#2F5D50",
+    "composerIcon": "./assets/taffy-headshot.png",
+    "logo": "./assets/taffy-headshot.png"
+  }
+}

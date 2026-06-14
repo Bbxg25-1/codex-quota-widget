@@ -1,0 +1,13 @@
+*.log
+*.tmp
+*.bak
+*.old
+*.swp
+*.ps1xml
+PowerShell_transcript.*
+Thumbs.db
+Desktop.ini
+.DS_Store
+work/
+tmp/
+cache/
