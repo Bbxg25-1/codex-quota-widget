@@ -16,6 +16,7 @@ $script:CodexProfileUsageCache = $null
 $script:CodexProfileUsageCacheAt = [DateTimeOffset]::MinValue
 $script:CodexRateLimitsCache = $null
 $script:CodexRateLimitsCacheAt = [DateTimeOffset]::MinValue
+$script:CodexRateLimitsLastStatus = "not-requested"
 
 function Test-CodexProcess {
   $process = Get-Process -ErrorAction SilentlyContinue |
@@ -244,15 +245,18 @@ function Get-CodexAppServerRateLimits {
   if (-not $ForceRefresh -and
       $null -ne $script:CodexRateLimitsCache -and
       ($now - $script:CodexRateLimitsCacheAt).TotalSeconds -lt $CacheSeconds) {
+    $script:CodexRateLimitsLastStatus = "ok"
     return $script:CodexRateLimitsCache
   }
 
   if ($null -eq $script:CodexRateLimitsCache -and -not $ForceRefresh) {
+    $script:CodexRateLimitsLastStatus = "not-requested"
     return $null
   }
 
   $codexCli = Get-CodexCliPath
   if ([string]::IsNullOrWhiteSpace($codexCli)) {
+    $script:CodexRateLimitsLastStatus = "codex-not-found"
     return $script:CodexRateLimitsCache
   }
 
@@ -317,8 +321,10 @@ function Get-CodexAppServerRateLimits {
 
     $script:CodexRateLimitsCache = $result
     $script:CodexRateLimitsCacheAt = $now
+    $script:CodexRateLimitsLastStatus = "ok"
     return $result
   } catch {
+    $script:CodexRateLimitsLastStatus = "request-failed"
     return $script:CodexRateLimitsCache
   } finally {
     if ($null -ne $socket) {
@@ -428,7 +434,7 @@ function Get-CodexProfileUsage {
     $script:CodexProfileUsageCacheAt = $now
     return $result
   } catch {
-    $result = New-ProfileUsageResult -Status "request-failed" -Message $_.Exception.Message
+    $result = New-ProfileUsageResult -Status "request-failed" -Message "Codex profile request failed"
     $script:CodexProfileUsageCache = $result
     $script:CodexProfileUsageCacheAt = $now
     return $result
@@ -721,6 +727,7 @@ function Get-CodexQuotaSnapshot {
       status = if ($hasProfileUsage) { "ok" } else { "no-token-count-found" }
       sourceFile = $null
       timestamp = $profileUsage.generatedAtLocal
+      appServerStatus = $script:CodexRateLimitsLastStatus
       rateLimitSource = if ($null -ne $appServerRateLimits) { $appServerRateLimits.source } else { $null }
       rateLimits = if ($null -ne $appServerRateLimits) { $appServerRateLimits.rateLimits } else { $null }
       tokenUsage = $null
@@ -762,6 +769,7 @@ function Get-CodexQuotaSnapshot {
     status = "ok"
     sourceFile = $latest.file
     timestamp = $timestampLocal
+    appServerStatus = $script:CodexRateLimitsLastStatus
     rateLimitReachedType = $event.payload.rate_limits.rate_limit_reached_type
     rateLimitSource = $rateLimitSource
     rateLimits = $rateLimits

@@ -4,7 +4,11 @@
 )
 
 $snapshotScript = Join-Path $PSScriptRoot "Get-CodexQuotaSnapshot.ps1"
+$assetScript = Join-Path $PSScriptRoot "WidgetAssets.ps1"
+$messageScript = Join-Path $PSScriptRoot "WidgetMessages.ps1"
 . $snapshotScript
+. $assetScript
+. $messageScript
 
 $script:SingleInstanceMutexName = "Local\CodexQuotaWidget.SingleInstance"
 $script:ShowEventName = "Local\CodexQuotaWidget.ShowWindow"
@@ -138,8 +142,8 @@ $colors = @{
   Muted = [System.Drawing.Color]::FromArgb(105, 112, 108)
   SoftMuted = [System.Drawing.Color]::FromArgb(139, 128, 133)
   CodexGreen = [System.Drawing.Color]::FromArgb(47, 93, 80)
-  TaffyPink = [System.Drawing.Color]::FromArgb(247, 168, 200)
-  TaffyLavender = [System.Drawing.Color]::FromArgb(176, 166, 245)
+  AccentPink = [System.Drawing.Color]::FromArgb(247, 168, 200)
+  AccentLavender = [System.Drawing.Color]::FromArgb(176, 166, 245)
   Warm = [System.Drawing.Color]::FromArgb(244, 176, 112)
   Alert = [System.Drawing.Color]::FromArgb(219, 95, 104)
   Track = [System.Drawing.Color]::FromArgb(236, 230, 224)
@@ -154,11 +158,22 @@ try {
 
 $pluginRoot = Split-Path -Parent $PSScriptRoot
 $assetsRoot = Join-Path $pluginRoot "assets"
-$characterCardPath = Join-Path $assetsRoot "taffy-character-card.png"
-$characterRawPath = Join-Path $assetsRoot "taffy-character.png"
-$characterPath = if (Test-Path -LiteralPath $characterCardPath) { $characterCardPath } else { $characterRawPath }
-$logoPath = Join-Path $assetsRoot "taffy-logo.png"
-$headshotIconPath = Join-Path $assetsRoot "taffy-headshot.ico"
+$privateAssetsRoot = Get-CodexQuotaPrivateAssetsRoot
+$characterPath = Get-CodexQuotaAssetPath `
+  -PrivateAssetsRoot $privateAssetsRoot `
+  -BundledAssetsRoot $assetsRoot `
+  -PrivateFileNames @("character-card.png", "character.png") `
+  -BundledFileNames @()
+$logoPath = Get-CodexQuotaAssetPath `
+  -PrivateAssetsRoot $privateAssetsRoot `
+  -BundledAssetsRoot $assetsRoot `
+  -PrivateFileNames @("logo.png") `
+  -BundledFileNames @()
+$headshotIconPath = Get-CodexQuotaAssetPath `
+  -PrivateAssetsRoot $privateAssetsRoot `
+  -BundledAssetsRoot $assetsRoot `
+  -PrivateFileNames @("icon.ico") `
+  -BundledFileNames @("codex-quota-widget.ico")
 $layoutOffsetX = 132
 $script:PrimaryRemaining = 0.0
 $script:SecondaryRemaining = 0.0
@@ -190,13 +205,13 @@ function Set-BarPalette {
   $remainingValue = Percent-Or-Zero $Remaining
   if ($remainingValue -lt 15) {
     $Bar.FillColor = $colors.Alert
-    $Bar.GlowColor = $colors.TaffyPink
+    $Bar.GlowColor = $colors.AccentPink
   } elseif ($remainingValue -lt 40) {
     $Bar.FillColor = $colors.Warm
-    $Bar.GlowColor = $colors.TaffyPink
+    $Bar.GlowColor = $colors.AccentPink
   } else {
     $Bar.FillColor = $colors.CodexGreen
-    $Bar.GlowColor = $colors.TaffyLavender
+    $Bar.GlowColor = $colors.AccentLavender
   }
 }
 
@@ -352,7 +367,7 @@ function Draw-QuotaBar {
   $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
     $rect,
     $Fill,
-    $colors.TaffyPink,
+    $colors.AccentPink,
     [System.Drawing.Drawing2D.LinearGradientMode]::Horizontal
   )
   $Graphics.FillPath($brush, $path)
@@ -374,7 +389,7 @@ function New-BackdropImage {
   )
   $rose = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(86, 255, 197, 224))
   $lav = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(66, 204, 202, 255))
-  $spark = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(140, $colors.TaffyPink), 2)
+  $spark = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(140, $colors.AccentPink), 2)
 
   $graphics.FillRectangle($bg, $bounds)
   $graphics.FillEllipse($rose, -48, 28, 166, 166)
@@ -472,9 +487,9 @@ $card.Paint.Add({
     35
   )
 
-  $pinkBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(42, $colors.TaffyPink))
-  $lavBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(36, $colors.TaffyLavender))
-  $linePen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(120, $colors.TaffyPink), 2)
+  $pinkBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(42, $colors.AccentPink))
+  $lavBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(36, $colors.AccentLavender))
+  $linePen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(120, $colors.AccentPink), 2)
 
   $g.FillRectangle($wash, $rect)
   $g.FillEllipse($pinkBrush, 314, -34, 116, 116)
@@ -506,40 +521,29 @@ if ($null -ne $characterImage) {
     param($sender, $event)
     $g = $event.Graphics
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $hair = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(246, 154, 198))
-    $skin = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 225, 213))
+    $panelBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 252, 253))
+    $trackBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(235, 226, 234))
+    $greenBrush = New-Object System.Drawing.SolidBrush($colors.CodexGreen)
     $lav = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(184, 174, 248))
-    $inkPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(90, 69, 78), 2)
-    $softPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(235, 172, 207), 3)
+    $outline = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(225, 196, 214), 2)
+    $symbolFont = New-Object System.Drawing.Font("Segoe UI", 15, [System.Drawing.FontStyle]::Bold)
 
-    $g.FillEllipse($hair, 20, 24, 76, 92)
-    $g.FillEllipse($skin, 28, 42, 60, 62)
-    $g.FillPolygon($lav, @(
-      [System.Drawing.Point]::new(16, 18),
-      [System.Drawing.Point]::new(42, 30),
-      [System.Drawing.Point]::new(22, 46)
-    ))
-    $g.FillPolygon($lav, @(
-      [System.Drawing.Point]::new(74, 30),
-      [System.Drawing.Point]::new(101, 18),
-      [System.Drawing.Point]::new(96, 48)
-    ))
-    $g.DrawArc($inkPen, 42, 65, 12, 10, 0, 180)
-    $g.DrawArc($inkPen, 66, 65, 12, 10, 0, 180)
-    $g.DrawArc($inkPen, 48, 78, 22, 12, 10, 160)
-    $g.DrawCurve($softPen, @(
-      [System.Drawing.Point]::new(15, 125),
-      [System.Drawing.Point]::new(42, 144),
-      [System.Drawing.Point]::new(88, 142),
-      [System.Drawing.Point]::new(105, 126)
-    ))
-    $g.DrawString("塔菲", [System.Drawing.Font]::new("Microsoft YaHei UI", 10, [System.Drawing.FontStyle]::Bold), $lav, 34, 92)
+    $g.FillEllipse($lav, 16, 10, 28, 28)
+    $g.FillEllipse($greenBrush, 79, 16, 18, 18)
+    $g.FillRectangle($panelBrush, 18, 34, 86, 72)
+    $g.DrawRectangle($outline, 18, 34, 86, 72)
+    $g.FillRectangle($trackBrush, 30, 52, 60, 10)
+    $g.FillRectangle($greenBrush, 30, 52, 44, 10)
+    $g.FillRectangle($trackBrush, 30, 72, 60, 10)
+    $g.FillRectangle($lav, 30, 72, 30, 10)
+    $g.DrawString("Q", $symbolFont, $panelBrush, 22, 10)
 
-    $hair.Dispose()
-    $skin.Dispose()
+    $panelBrush.Dispose()
+    $trackBrush.Dispose()
+    $greenBrush.Dispose()
     $lav.Dispose()
-    $inkPen.Dispose()
-    $softPen.Dispose()
+    $outline.Dispose()
+    $symbolFont.Dispose()
   })
   $form.Controls.Add($characterFallback)
 }
@@ -562,9 +566,9 @@ $close.Add_Click({
 })
 
 $kicker = New-Label "CODEX 额度" 22 20 120 18 8 "Bold" $colors.CodexGreen
-$taffyChip = New-RoundedPanel 238 19 78 24 ([System.Drawing.Color]::FromArgb(255, 244, 248)) 12
-$taffyChip.StrokeColor = [System.Drawing.Color]::FromArgb(238, 191, 212)
-$taffyText = New-Label "塔菲模式" 251 24 60 14 7 "Bold" $colors.SoftMuted
+$modeChip = New-RoundedPanel 238 19 78 24 ([System.Drawing.Color]::FromArgb(255, 244, 248)) 12
+$modeChip.StrokeColor = [System.Drawing.Color]::FromArgb(238, 191, 212)
+$modeText = New-Label "柔粉模式" 251 24 60 14 7 "Bold" $colors.SoftMuted
 
 $refreshButton = New-Object System.Windows.Forms.Button
 $refreshButton.Text = "刷新"
@@ -632,8 +636,8 @@ $sourceLabel.Visible = $false
 $shiftedControls = @(
   $close,
   $kicker,
-  $taffyChip,
-  $taffyText,
+  $modeChip,
+  $modeText,
   $refreshButton,
   $title,
   $status,
@@ -661,7 +665,7 @@ foreach ($control in $shiftedControls) {
 }
 
 $card.Visible = $false
-$taffyChip.Visible = $false
+$modeChip.Visible = $false
 $primaryPanel.Visible = $false
 $secondaryPanel.Visible = $false
 
@@ -673,7 +677,7 @@ foreach ($control in @($primaryName, $primaryPercent, $primaryReset, $secondaryN
   $control.BackColor = $colors.CardSoft
 }
 
-$taffyText.BackColor = [System.Drawing.Color]::FromArgb(255, 244, 248)
+$modeText.BackColor = [System.Drawing.Color]::FromArgb(255, 244, 248)
 
 $logoBox = $null
 if ($null -ne $logoImage) {
@@ -684,8 +688,8 @@ if ($null -ne $logoImage) {
 $form.Controls.AddRange(@(
   $close,
   $kicker,
-  $taffyChip,
-  $taffyText,
+  $modeChip,
+  $modeText,
   $refreshButton,
   $title,
   $status,
@@ -711,7 +715,7 @@ if ($null -ne $logoBox) {
   $form.Controls.Add($logoBox)
 }
 
-foreach ($control in @($kicker, $taffyText, $refreshButton, $title, $status, $totalCaption, $totalValue, $totalMeta, $todayValue, $primaryName, $primaryPercent, $primaryReset, $secondaryName, $secondaryPercent, $secondaryReset, $threadLabel, $sourceLabel, $logoBox, $upperArm, $lowerArm)) {
+foreach ($control in @($kicker, $modeText, $refreshButton, $title, $status, $totalCaption, $totalValue, $totalMeta, $todayValue, $primaryName, $primaryPercent, $primaryReset, $secondaryName, $secondaryPercent, $secondaryReset, $threadLabel, $sourceLabel, $logoBox, $upperArm, $lowerArm)) {
   if ($null -eq $control) {
     continue
   }
@@ -746,7 +750,7 @@ foreach ($control in @(
   $characterBox,
   $characterFallback,
   $kicker,
-  $taffyText,
+  $modeText,
   $status,
   $totalCaption,
   $totalValue,
@@ -823,7 +827,11 @@ function Update-Widget {
   }
 
   if ($snapshot.status -ne "ok") {
-    $status.Text = "Codex 正在运行，等待令牌数据"
+    if ($null -ne $snapshot.profileUsage -and $snapshot.profileUsage.status -ne "ok") {
+      $status.Text = Get-CodexQuotaProfileMessage -Status $snapshot.profileUsage.status
+    } else {
+      $status.Text = Get-CodexQuotaSnapshotMessage -Status $snapshot.status
+    }
     $totalValue.Text = "-"
     $todayValue.Text = "-"
     $primaryBar.Percent = 0
@@ -852,8 +860,8 @@ function Update-Widget {
   } else {
     $totalValue.Text = "-"
     $todayValue.Text = Format-Number $snapshot.todayUsage.totalTokens
-    if ($null -ne $profileUsage -and -not [string]::IsNullOrWhiteSpace($profileUsage.message)) {
-      $status.Text = "个人资料读取失败"
+    if ($null -ne $profileUsage) {
+      $status.Text = Get-CodexQuotaProfileMessage -Status $profileUsage.status
     }
   }
   $script:PrimaryRemaining = 0.0
@@ -877,6 +885,10 @@ function Update-Widget {
     $script:SecondaryBarColor = $secondaryBar.FillColor
     $secondaryPercent.Text = "剩余 $($secondary.remainingPercent)%"
     $secondaryReset.Text = "重置 $($secondary.resetsAtLocal)"
+  }
+
+  if ($null -eq $primary -and $null -eq $secondary -and $snapshot.appServerStatus -notin @("ok", "not-requested")) {
+    $status.Text = Get-CodexQuotaAppServerMessage -Status $snapshot.appServerStatus
   }
 
   if ($hasProfileUsage) {

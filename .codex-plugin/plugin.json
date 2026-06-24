@@ -1,6 +1,6 @@
 {
   "name": "codex-quota-widget",
-  "version": "0.1.0+codex.20260623025435",
+  "version": "0.2.0+codex.20260624050719",
   "description": "Codex \u989d\u5ea6\u67e5\u770b\u5c0f\u7a97\u53e3 / Codex quota viewer mini window.",
   "author": {
     "name": "pimin"
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "Codex \u989d\u5ea6\u67e5\u770b\u5c0f\u7a97\u53e3",
     "shortDescription": "\u67e5\u770b Codex Token \u4f7f\u7528\u91cf\u548c\u989d\u5ea6\u7a97\u53e3\u3002 / View Codex token usage and quota windows.",
-    "longDescription": "Codex \u989d\u5ea6\u67e5\u770b\u5c0f\u7a97\u53e3\u4f1a\u5728 Windows \u684c\u9762\u4e0a\u663e\u793a Codex \u4e2a\u4eba\u8d44\u6599 Token \u7edf\u8ba1\u30015 \u5c0f\u65f6\u548c 7 \u5929\u989d\u5ea6\u7a97\u53e3\u3001\u8fde\u7eed\u4f7f\u7528\u5929\u6570\uff0c\u5e76\u652f\u6301\u5237\u65b0\u4e0e\u5355\u5b9e\u4f8b\u8fd0\u884c\u3002English: A small Windows desktop companion that shows Codex profile token stats, 5-hour and 7-day quota windows, current streak days, refresh support, and single-instance behavior.",
+    "longDescription": "Codex \u989d\u5ea6\u67e5\u770b\u5c0f\u7a97\u53e3\u4f1a\u5728 Windows \u684c\u9762\u4e0a\u663e\u793a Token \u7edf\u8ba1\u30015 \u5c0f\u65f6\u548c 7 \u5929\u989d\u5ea6\u7a97\u53e3\u3001\u8fde\u7eed\u4f7f\u7528\u5929\u6570\uff0c\u5e76\u652f\u6301\u5b89\u5168\u8bf4\u660e\u3001\u672c\u673a\u79c1\u6709\u7d20\u6750\u3001\u5237\u65b0\u4e0e\u5355\u5b9e\u4f8b\u8fd0\u884c\u3002 English: A privacy-documented Windows companion that shows Codex token stats, quota windows, streak days, local-only custom assets, refresh support, and single-instance behavior.",
     "developerName": "pimin",
     "category": "Productivity",
     "capabilities": [
@@ -20,7 +20,7 @@
       "\u67e5\u770b\u6211\u7684 Codex \u989d\u5ea6 / Show my current Codex quota"
     ],
     "brandColor": "#2F5D50",
-    "composerIcon": "./assets/taffy-headshot.png",
-    "logo": "./assets/taffy-headshot.png"
+    "composerIcon": "./assets/codex-quota-widget.png",
+    "logo": "./assets/codex-quota-widget.png"
   }
 }
