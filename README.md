@@ -117,7 +117,6 @@ English: Profile statistics come from the ChatGPT backend on the official domain
 ```text
 character-card.png
 character.png
-logo.png
 icon.ico
 ```
 

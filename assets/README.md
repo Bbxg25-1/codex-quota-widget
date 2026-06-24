@@ -21,7 +21,6 @@
 ```text
 character-card.png
 character.png
-logo.png
 icon.ico
 ```
 

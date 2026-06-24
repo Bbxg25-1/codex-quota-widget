@@ -164,11 +164,6 @@ $characterPath = Get-CodexQuotaAssetPath `
   -BundledAssetsRoot $assetsRoot `
   -PrivateFileNames @("character-card.png", "character.png") `
   -BundledFileNames @()
-$logoPath = Get-CodexQuotaAssetPath `
-  -PrivateAssetsRoot $privateAssetsRoot `
-  -BundledAssetsRoot $assetsRoot `
-  -PrivateFileNames @("logo.png") `
-  -BundledFileNames @()
 $headshotIconPath = Get-CodexQuotaAssetPath `
   -PrivateAssetsRoot $privateAssetsRoot `
   -BundledAssetsRoot $assetsRoot `
@@ -507,7 +502,6 @@ $card.Paint.Add({
 $form.Controls.Add($card)
 
 $characterImage = Get-ImageOrNull $characterPath
-$logoImage = Get-ImageOrNull $logoPath
 $characterBox = $null
 $characterFallback = $null
 
@@ -566,9 +560,6 @@ $close.Add_Click({
 })
 
 $kicker = New-Label "CODEX 额度" 22 20 120 18 8 "Bold" $colors.CodexGreen
-$modeChip = New-RoundedPanel 238 19 78 24 ([System.Drawing.Color]::FromArgb(255, 244, 248)) 12
-$modeChip.StrokeColor = [System.Drawing.Color]::FromArgb(238, 191, 212)
-$modeText = New-Label "柔粉模式" 251 24 60 14 7 "Bold" $colors.SoftMuted
 
 $refreshButton = New-Object System.Windows.Forms.Button
 $refreshButton.Text = "刷新"
@@ -636,8 +627,6 @@ $sourceLabel.Visible = $false
 $shiftedControls = @(
   $close,
   $kicker,
-  $modeChip,
-  $modeText,
   $refreshButton,
   $title,
   $status,
@@ -665,7 +654,6 @@ foreach ($control in $shiftedControls) {
 }
 
 $card.Visible = $false
-$modeChip.Visible = $false
 $primaryPanel.Visible = $false
 $secondaryPanel.Visible = $false
 
@@ -676,20 +664,9 @@ foreach ($control in @($kicker, $title, $status, $totalCaption, $totalValue, $to
 foreach ($control in @($primaryName, $primaryPercent, $primaryReset, $secondaryName, $secondaryPercent, $secondaryReset)) {
   $control.BackColor = $colors.CardSoft
 }
-
-$modeText.BackColor = [System.Drawing.Color]::FromArgb(255, 244, 248)
-
-$logoBox = $null
-if ($null -ne $logoImage) {
-  $logoBox = New-PictureBox $logoImage ($layoutOffsetX + 20) 18 136 34
-  $kicker.Visible = $false
-}
-
 $form.Controls.AddRange(@(
   $close,
   $kicker,
-  $modeChip,
-  $modeText,
   $refreshButton,
   $title,
   $status,
@@ -711,11 +688,7 @@ $form.Controls.AddRange(@(
   $sourceLabel
 ))
 
-if ($null -ne $logoBox) {
-  $form.Controls.Add($logoBox)
-}
-
-foreach ($control in @($kicker, $modeText, $refreshButton, $title, $status, $totalCaption, $totalValue, $totalMeta, $todayValue, $primaryName, $primaryPercent, $primaryReset, $secondaryName, $secondaryPercent, $secondaryReset, $threadLabel, $sourceLabel, $logoBox, $upperArm, $lowerArm)) {
+foreach ($control in @($kicker, $refreshButton, $title, $status, $totalCaption, $totalValue, $totalMeta, $todayValue, $primaryName, $primaryPercent, $primaryReset, $secondaryName, $secondaryPercent, $secondaryReset, $threadLabel, $sourceLabel, $upperArm, $lowerArm)) {
   if ($null -eq $control) {
     continue
   }
@@ -750,7 +723,6 @@ foreach ($control in @(
   $characterBox,
   $characterFallback,
   $kicker,
-  $modeText,
   $status,
   $totalCaption,
   $totalValue,
@@ -763,8 +735,7 @@ foreach ($control in @(
   $secondaryPercent,
   $secondaryReset,
   $threadLabel,
-  $sourceLabel,
-  $logoBox
+  $sourceLabel
 )) {
   if ($null -eq $control) {
     continue
@@ -941,7 +912,6 @@ $form.Add_FormClosed({
   $notify.Visible = $false
   $notify.Dispose()
   if ($null -ne $characterImage) { $characterImage.Dispose() }
-  if ($null -ne $logoImage) { $logoImage.Dispose() }
   if ($script:WidgetIconIsCustom -and $null -ne $widgetIcon) { $widgetIcon.Dispose() }
   if ($null -ne $script:backdropBox -and $null -ne $script:backdropBox.Image) { $script:backdropBox.Image.Dispose() }
   if ($null -ne $script:ShowEvent) { $script:ShowEvent.Dispose() }

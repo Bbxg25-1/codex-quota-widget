@@ -106,6 +106,10 @@ Assert-Contains $readme "MIT License" "README license"
 $manifest = Get-Content -Raw -Encoding UTF8 (Join-Path $repoRoot ".codex-plugin\plugin.json") | ConvertFrom-Json
 Assert-Equal $manifest.interface.logo "./assets/codex-quota-widget.png" "manifest uses public logo"
 
+$widgetSource = Get-Content -Raw -Encoding UTF8 (Join-Path $repoRoot "scripts\Start-CodexQuotaWidget.ps1")
+Assert-Equal $widgetSource.Contains('$logoBox') $false "widget has no top logo control"
+Assert-Equal $widgetSource.Contains('柔粉模式') $false "widget has no mode badge"
+
 foreach ($scriptFile in Get-ChildItem -LiteralPath (Join-Path $repoRoot "scripts") -Filter "*.ps1" -File) {
   $bytes = [System.IO.File]::ReadAllBytes($scriptFile.FullName)
   $utf8Text = [System.Text.Encoding]::UTF8.GetString($bytes)
