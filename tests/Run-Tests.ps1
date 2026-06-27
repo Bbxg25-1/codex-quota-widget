@@ -109,6 +109,9 @@ Assert-Equal $manifest.interface.logo "./assets/codex-quota-widget.png" "manifes
 $widgetSource = Get-Content -Raw -Encoding UTF8 (Join-Path $repoRoot "scripts\Start-CodexQuotaWidget.ps1")
 Assert-Equal $widgetSource.Contains('$logoBox') $false "widget has no top logo control"
 Assert-Equal $widgetSource.Contains('柔粉模式') $false "widget has no mode badge"
+Assert-Contains $widgetSource "class NativeDrag" "widget defines native drag helper"
+Assert-Contains $widgetSource "::MoveWindow" "widget uses native window dragging"
+Assert-Equal ($widgetSource.Contains('$form.Left = $form.Left +') -or $widgetSource.Contains('$form.Top = $form.Top +')) $false "widget avoids scripted drag repositioning"
 
 foreach ($scriptFile in Get-ChildItem -LiteralPath (Join-Path $repoRoot "scripts") -Filter "*.ps1" -File) {
   $bytes = [System.IO.File]::ReadAllBytes($scriptFile.FullName)

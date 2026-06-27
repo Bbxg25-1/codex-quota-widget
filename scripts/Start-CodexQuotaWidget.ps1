@@ -130,6 +130,26 @@ namespace CodexQuotaWidget {
       return path;
     }
   }
+
+  public static class NativeDrag {
+    private const int WM_NCLBUTTONDOWN = 0xA1;
+    private const int HTCAPTION = 0x2;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool ReleaseCapture();
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
+
+    public static void MoveWindow(Form form) {
+      if (form == null || form.IsDisposed) {
+        return;
+      }
+
+      ReleaseCapture();
+      SendMessage(form.Handle, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+    }
+  }
 }
 '@
 
@@ -178,6 +198,7 @@ $script:backdropBox = $null
 $script:ManualHidden = $false
 $script:WidgetIconIsCustom = $false
 $script:Refreshing = $false
+$script:DraggingWindow = $false
 
 function Format-Number {
   param([object]$Value)
@@ -699,23 +720,17 @@ if ($null -ne $characterFallback) { $characterFallback.BringToFront() }
 $close.BringToFront()
 $refreshButton.BringToFront()
 
-$script:dragging = $false
-$script:dragPoint = New-Object System.Drawing.Point(0, 0)
-$dragStart = {
+$nativeDragStart = {
   param($sender, $event)
   if ($event.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
-    $script:dragging = $true
-    $script:dragPoint = $event.Location
+    $script:DraggingWindow = $true
+    try {
+      [CodexQuotaWidget.NativeDrag]::MoveWindow($form)
+    } finally {
+      $script:DraggingWindow = $false
+    }
   }
 }
-$dragMove = {
-  param($sender, $event)
-  if ($script:dragging) {
-    $form.Left = $form.Left + $event.X - $script:dragPoint.X
-    $form.Top = $form.Top + $event.Y - $script:dragPoint.Y
-  }
-}
-$dragEnd = { $script:dragging = $false }
 
 foreach ($control in @(
   $form,
@@ -741,9 +756,7 @@ foreach ($control in @(
     continue
   }
   $control.Cursor = [System.Windows.Forms.Cursors]::SizeAll
-  $control.Add_MouseDown($dragStart)
-  $control.Add_MouseMove($dragMove)
-  $control.Add_MouseUp($dragEnd)
+  $control.Add_MouseDown($nativeDragStart)
 }
 
 $notify = New-Object System.Windows.Forms.NotifyIcon
@@ -773,6 +786,10 @@ $timer.Interval = [Math]::Max(1, $RefreshSeconds) * 1000
 
 function Update-Widget {
   param([switch]$ForceProfileRefresh)
+
+  if ($script:DraggingWindow) {
+    return
+  }
 
   $shouldForceRefresh = $ForceProfileRefresh -or ((-not $form.Visible) -and (-not $script:ManualHidden) -and (Test-CodexProcess))
   $snapshot = Get-CodexQuotaSnapshot -CodexHome $CodexHome -ForceProfileRefresh:$shouldForceRefresh
