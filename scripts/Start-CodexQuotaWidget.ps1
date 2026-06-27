@@ -131,25 +131,6 @@ namespace CodexQuotaWidget {
     }
   }
 
-  public static class NativeDrag {
-    private const int WM_NCLBUTTONDOWN = 0xA1;
-    private const int HTCAPTION = 0x2;
-
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    private static extern bool ReleaseCapture();
-
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
-
-    public static void MoveWindow(Form form) {
-      if (form == null || form.IsDisposed) {
-        return;
-      }
-
-      ReleaseCapture();
-      SendMessage(form.Handle, WM_NCLBUTTONDOWN, HTCAPTION, 0);
-    }
-  }
 }
 '@
 
@@ -720,16 +701,43 @@ if ($null -ne $characterFallback) { $characterFallback.BringToFront() }
 $close.BringToFront()
 $refreshButton.BringToFront()
 
-$nativeDragStart = {
+$script:dragging = $false
+$script:dragOriginMouse = New-Object System.Drawing.Point(0, 0)
+$script:dragOriginForm = New-Object System.Drawing.Point(0, 0)
+$script:lastDragMoveTick = 0
+$dragStart = {
   param($sender, $event)
   if ($event.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
+    $script:dragging = $true
     $script:DraggingWindow = $true
-    try {
-      [CodexQuotaWidget.NativeDrag]::MoveWindow($form)
-    } finally {
-      $script:DraggingWindow = $false
-    }
+    $script:dragOriginMouse = [System.Windows.Forms.Control]::MousePosition
+    $script:dragOriginForm = $form.Location
+    $script:lastDragMoveTick = 0
+    $sender.Capture = $true
   }
+}
+$dragMove = {
+  param($sender, $event)
+  if (-not $script:dragging) {
+    return
+  }
+
+  $now = [System.Environment]::TickCount
+  if ($script:lastDragMoveTick -ne 0 -and ($now - $script:lastDragMoveTick) -lt 8) {
+    return
+  }
+
+  $script:lastDragMoveTick = $now
+  $mouse = [System.Windows.Forms.Control]::MousePosition
+  $dx = $mouse.X - $script:dragOriginMouse.X
+  $dy = $mouse.Y - $script:dragOriginMouse.Y
+  $form.Location = New-Object System.Drawing.Point(($script:dragOriginForm.X + $dx), ($script:dragOriginForm.Y + $dy))
+}
+$dragEnd = {
+  param($sender, $event)
+  $script:dragging = $false
+  $script:DraggingWindow = $false
+  $sender.Capture = $false
 }
 
 foreach ($control in @(
@@ -756,7 +764,9 @@ foreach ($control in @(
     continue
   }
   $control.Cursor = [System.Windows.Forms.Cursors]::SizeAll
-  $control.Add_MouseDown($nativeDragStart)
+  $control.Add_MouseDown($dragStart)
+  $control.Add_MouseMove($dragMove)
+  $control.Add_MouseUp($dragEnd)
 }
 
 $notify = New-Object System.Windows.Forms.NotifyIcon

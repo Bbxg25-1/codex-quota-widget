@@ -37,5 +37,5 @@
 - Added MIT License, preview, three-step quick start, FAQ, and PowerShell policy guidance.
 - Improved actionable messages for login, network, profile, Codex executable, and app-server failures.
 - Simplified the header by removing the avatar logo and mode badge.
-- Improved drag performance by using native Windows window movement instead of scripted per-frame repositioning.
+- Fixed dragging reliability by replacing the failed native-drag attempt with screen-coordinate dragging and light movement throttling.
 - Preserved quota retrieval, manual and 10-minute refresh, single-instance behavior, and Codex-aware visibility.
